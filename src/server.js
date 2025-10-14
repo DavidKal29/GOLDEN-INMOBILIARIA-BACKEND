@@ -48,6 +48,41 @@ app.post('/register',async(req,res)=>{
     }
 })
 
+app.post('/login',async(req,res)=>{
+    try {
+        const db = await conectarDB()
+        const users = db.collection('users')
+        const {email,password} = req.body
+
+        const user_exists = await users.findOne({email:email})
+
+        if (user_exists) {
+            console.log('Email o username ya están en uso')
+
+            const check = await bcrypt.compare(password,user_exists.password)
+
+            if (check) {
+                console.log('La contraseña es correcta');
+                return res.json({success:'Usuario logueado con éxito'})
+            }else{
+                console.log('La contraseña es incorrecta');
+                return res.json({error:'La contraseña es incorrecta'})
+            }
+            
+        }else{
+            console.log('No hay ninguna cuenta asociada a ese email');
+            return res.json({error:'No hay ninguna cuenta asociada a ese email'})
+               
+        }
+
+        
+    } catch (error) {
+        console.log('Error en la ruta de register');
+        console.log(error);
+        return res.json({error:'Error al registrar usuario'})
+    }
+})
+
 
 
 
