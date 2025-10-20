@@ -24,6 +24,7 @@ app.use(cors({
 }))
 
 
+
 const authMiddleware = async(req,res,next)=>{
     try {
         const token = req.cookies.token
@@ -207,6 +208,38 @@ app.post('/editProfile',authMiddleware,async(req,res)=>{
         console.log('Error en la ruta de editar perfil');
         console.log(error);
         return res.json({error:'Error al editar perfil'})
+    }
+})
+
+app.get('/houses/:category',async(req,res)=>{
+    try {
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const category = req.params.category
+
+        const houses = await housesCollection.find({category:`${category}`}).toArray()
+
+        console.log(houses);
+        
+
+        if (houses.length>0) {
+            console.log('Casas obtenidas con exito');
+
+            return res.json({houses:houses})
+            
+        }else{
+            console.log('No se han obtenido las casas');
+
+            return res.json({error:'No se han obtenido las casas'})
+            
+        }
+
+    } catch (error) {
+        console.log('Error al obtener las casas');
+
+        return res.json({error:'Error al obtener las casas'})
+        
     }
 })
 
