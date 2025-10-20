@@ -160,6 +160,16 @@ app.get('/profile',authMiddleware,(req,res)=>{
     return res.json({user:req.user})
 })
 
+app.get('/logout',authMiddleware,(req,res)=>{
+    try {
+        res.clearCookie('token',cookieOptions)
+        return res.json({success:'Sesión cerrada con éxito'})
+    } catch (error) {
+        return res.json({error:'Error al cerrar sesión'})
+    }
+
+})
+
 
 
 
