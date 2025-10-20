@@ -171,6 +171,46 @@ app.get('/logout',authMiddleware,(req,res)=>{
 })
 
 
+app.post('/editProfile',authMiddleware,async(req,res)=>{
+    try {
+        const db = await conectarDB()
+        const users = db.collection('users')
+        const {email,username,phone,description} = req.body
+
+        if (email===req.user.email && username===req.user.username && phone===req.user.phone && description === req.user.description) {
+            console.log('Mínimo un campo debe ser distitno');
+            
+            return res.json({error:'Mínimo un campo debe ser distinto'})
+        }
+        
+        const user_exists = await users.findOne(
+            {
+                $or:[{email:email},{username:username},{phone:phone}],
+                _id:{$ne:req.user._id}
+            }
+        )
+
+        if (user_exists) {
+            console.log('Email o username ya están en uso');
+            return res.json({error:'Email o username ya están en uso'})
+        }else{
+            console.log('Datos nuevos inexistentes');
+
+            await users.updateOne({_id:req.user._id},{$set:{email:email,username:username,phone:phone,description:description}})
+
+            return res.json({success:'Datos editados con éxito'})
+               
+        }
+
+        
+    } catch (error) {
+        console.log('Error en la ruta de editar perfil');
+        console.log(error);
+        return res.json({error:'Error al editar perfil'})
+    }
+})
+
+
 
 
 app.listen(3000,()=>{
