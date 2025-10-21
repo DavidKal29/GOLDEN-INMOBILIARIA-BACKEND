@@ -243,6 +243,40 @@ app.get('/houses/:category',async(req,res)=>{
     }
 })
 
+app.get('/house/:id',async(req,res)=>{
+    try {
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        const house = await housesCollection.findOne({_id:new ObjectId(id)})
+
+        console.log(house);
+        
+
+        if (house) {
+            console.log('Casa obtenida con exito');
+
+            return res.json({house:house})
+            
+        }else{
+            console.log('No se ha obtenido la casa');
+
+            return res.json({error:'No se ha obtenido las casa'})
+            
+        }
+
+    } catch (error) {
+        console.log('Error al obtener la casa');
+        console.log(error);
+        
+
+        return res.json({error:'Error al obtener la casa'})
+        
+    }
+})
+
 
 
 
