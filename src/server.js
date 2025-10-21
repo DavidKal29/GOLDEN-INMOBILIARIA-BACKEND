@@ -473,11 +473,9 @@ app.post('/buyHouse/:id',CSRFProtection,authMiddleware,paymentValidator,async(re
         }else{
             console.log('La casa sigue disponible');
 
-            await users.updateOne({_id: new ObjectId(req.user._id)},{$push:{houses:new ObjectId(id)}})
+            await houses.updateOne({_id: new ObjectId(id)},{$set:{rented:true, id_user: new ObjectId(req.user._id)}})
 
             console.log('La casa ha sido añadida a la lista de compras del usuario');
-
-            await houses.updateOne({_id: new ObjectId(id)},{$set:{rented:true}})
 
             console.log('La casa ya no está a la venta');
 
@@ -500,19 +498,9 @@ app.get('/getMyHouses',authMiddleware,async(req,res)=>{
         const users = db.collection('users')
         const houses = db.collection('houses')
 
-        if (req.user.houses && req.user.houses.length>0) {
-            
-            const myHouses = []
-            const userHouses = req.user.houses
-            
-            for (let i = 0; i < userHouses.length; i++) {
-                const house = await houses.findOne({_id: new ObjectId(userHouses[i])})  
+        const myHouses = await houses.find({id_user:new ObjectId(req.user._id), rented:true}).toArray()
 
-                myHouses.push(house)
-            }
-
-            console.log(myHouses);
-
+        if (myHouses.length>0) {
             return res.json({houses:myHouses})
         }else{
             return res.json({houses:[]})
