@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken')
 const cookieOptions = require('./cookieOptions.js')
 const JWT_SECRET = process.env.JWT_SECRET
 const {ObjectId} = require('mongodb')
+const csruf = require('csurf')
 
 console.log(cookieOptions);
 
@@ -23,7 +24,11 @@ app.use(cors({
     credentials:true
 }))
 
+const CSRFProtection = csruf({cookie:{cookieOptions}})
 
+app.get('/csrf-token',CSRFProtection,(req,res)=>{
+    return res.json({csrfToken: req.csrfToken()})
+})
 
 const authMiddleware = async(req,res,next)=>{
     try {
@@ -66,7 +71,7 @@ const authMiddleware = async(req,res,next)=>{
 }
 
 
-app.post('/register',async(req,res)=>{
+app.post('/register',CSRFProtection,async(req,res)=>{
     try {
         const db = await conectarDB()
         const users = db.collection('users')
@@ -114,7 +119,7 @@ app.post('/register',async(req,res)=>{
     }
 })
 
-app.post('/login',async(req,res)=>{
+app.post('/login',CSRFProtection,async(req,res)=>{
     try {
         const db = await conectarDB()
         const users = db.collection('users')
@@ -172,7 +177,7 @@ app.get('/logout',authMiddleware,(req,res)=>{
 })
 
 
-app.post('/editProfile',authMiddleware,async(req,res)=>{
+app.post('/editProfile',CSRFProtection,authMiddleware,async(req,res)=>{
     try {
         const db = await conectarDB()
         const users = db.collection('users')
