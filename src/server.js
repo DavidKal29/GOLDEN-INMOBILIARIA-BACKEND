@@ -477,6 +477,40 @@ app.post('/buyHouse/:id',CSRFProtection,authMiddleware,paymentValidator,async(re
 })
 
 
+app.get('/getMyHouses',authMiddleware,async(req,res)=>{
+    try {
+        const db = await conectarDB()
+        const users = db.collection('users')
+        const houses = db.collection('houses')
+
+        if (req.user.houses && req.user.houses.length>0) {
+            
+            const myHouses = []
+            const userHouses = req.user.houses
+            
+            for (let i = 0; i < userHouses.length; i++) {
+                const house = await houses.findOne({_id: new ObjectId(userHouses[i])})  
+
+                myHouses.push(house)
+            }
+
+            console.log(myHouses);
+
+            return res.json({houses:myHouses})
+        }else{
+            return res.json({houses:[]})
+        }
+        
+    } catch (error) {
+        console.log(error);
+        
+        console.log('Erorr en get mys houses');
+        
+        return res.json({error:'Error al obtener los datos de las casas del usuario'}) 
+    }
+})
+
+
 
 
 
