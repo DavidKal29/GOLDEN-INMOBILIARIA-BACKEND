@@ -9,6 +9,7 @@ const cookieOptions = require('./cookieOptions.js')
 const JWT_SECRET = process.env.JWT_SECRET
 const {ObjectId} = require('mongodb')
 const csruf = require('csurf')
+const {body,validationResult} = require('express-validator')
 
 console.log(cookieOptions);
 
@@ -71,8 +72,47 @@ const authMiddleware = async(req,res,next)=>{
 }
 
 
-app.post('/register',CSRFProtection,async(req,res)=>{
+
+
+//Validador de los inputs del register
+const validadorRegister = [
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email no puede estar vacío')
+        .isLength({ min: 6, max: 150 }).withMessage('Email demasiado corto o largo')
+        .isEmail().withMessage('Debes poner un email válido')
+        .normalizeEmail()
+        .customSanitizer(val=>(val || '').replace(/\s+/g,''))
+        .escape(),
+
+    body('username')
+        .trim()
+        .notEmpty().withMessage('Username no puede estar vacío')
+        .customSanitizer(val=>(val || '').replace(/\s+/g,''))
+        .isLength({min:5,max:15}).withMessage('Username debe contener entre 5 y 15 carácteres')
+        .matches(/^[a-zA-Z0-9_.]+$/).withMessage('Solo se permiten letras, números, guion bajo y punto')
+        .matches(/[a-zA-Z]/).withMessage('Mínimo una letra en Username')
+        .escape(),
+
+    body('password')
+        .trim()
+        .notEmpty().withMessage('Password no puede estar vacío')
+        .matches(/\d/).withMessage('Mínimo un dígito')
+        .isLength({min:8,max:30}).withMessage('Password debe contener entre 8 y 30 carácteres')
+        .matches(/[A-Z]/).withMessage('Mínimo una mayúscula en Password')
+        .matches(/[#$€&%]/).withMessage('Mínimo un carácter especial en Password')
+        .customSanitizer(val=>(val || '').replace(/\s+/g,''))
+        .escape()
+        
+]
+app.post('/register',CSRFProtection,validadorRegister,async(req,res)=>{
     try {
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({error:errors.array()[0].msg})
+        }
+
         const db = await conectarDB()
         const users = db.collection('users')
         const {email,username,password} = req.body
@@ -176,9 +216,47 @@ app.get('/logout',authMiddleware,(req,res)=>{
 
 })
 
+const validadorEditProfile = [
+    body('email')
+        .trim()
+        .notEmpty().withMessage('Email no puede estar vacío')
+        .isEmail().withMessage('Debes poner un email válido')
+        .isLength({ min: 6, max: 150 }).withMessage('Email demasiado corto o largo')
+        .normalizeEmail()
+        .customSanitizer(val => (val || '').replace(/\s+/g, ''))
+        .escape(),
 
-app.post('/editProfile',CSRFProtection,authMiddleware,async(req,res)=>{
+    body('username')
+        .trim()
+        .notEmpty().withMessage('Username no puede estar vacío')
+        .customSanitizer(val => (val || '').replace(/\s+/g, ''))
+        .isLength({ min: 5, max: 15 }).withMessage('Username debe contener entre 5 y 15 carácteres')
+        .matches(/^[a-zA-Z0-9_.]+$/).withMessage('Solo se permiten letras, números, guion bajo y punto')
+        .matches(/[a-zA-Z]/).withMessage('Mínimo una letra en Username')
+        .escape(),
+
+    body('phone')
+        .trim()
+        .optional({ checkFalsy: true })
+        .matches(/^[0-9]+$/).withMessage('El teléfono solo puede contener números')
+        .isLength({ min: 7, max: 15 }).withMessage('El teléfono debe tener entre 7 y 15 dígitos')
+        .customSanitizer(val => (val || '').replace(/\s+/g, ''))
+        .escape(),
+
+    body('description')
+        .trim()
+        .isLength({min:0, max:100}).withMessage('Máximo 100 carácteres la descripción')
+        .customSanitizer(val=>val.replace(/\s+/g, ' '))
+        .escape()
+]
+app.post('/editProfile',CSRFProtection,validadorEditProfile,authMiddleware,async(req,res)=>{
     try {
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({error:errors.array()[0].msg})
+        }
+
         const db = await conectarDB()
         const users = db.collection('users')
         const {email,username,phone,description} = req.body
