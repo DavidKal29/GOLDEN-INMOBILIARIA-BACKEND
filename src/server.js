@@ -10,6 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET
 const {ObjectId} = require('mongodb')
 const csruf = require('csurf')
 const {body,validationResult} = require('express-validator')
+const {brevo, apiInstance} = require('./brevo.js')
 
 console.log(cookieOptions);
 
@@ -509,6 +510,61 @@ app.get('/getMyHouses',authMiddleware,async(req,res)=>{
         return res.json({error:'Error al obtener los datos de las casas del usuario'}) 
     }
 })
+
+
+//Validador del email de recuperación de contraseña
+const validadorRecuperarPassword = [
+        body('email')
+        .trim()
+        .notEmpty().withMessage('Email no puede estar vacío')
+        .isEmail().withMessage('Debes poner un email válido')
+        .normalizeEmail()
+        .customSanitizer(val=>(val || '').replace(/\s+/g,''))
+        .escape()
+]
+
+// Ruta para enviar correo de recuperación
+app.post('/forgotPassword',validadorRecuperarPassword,CSRFProtection, async(req, res) => {
+    try {
+        const errors = validationResult(req)
+        
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ message: errors.array()[0].msg })
+        }
+
+        const db = await conectarDB()
+        const users = db.collection('users')
+
+        const { email } = req.body
+        const user_exists = await users.findOne({email:email}) 
+
+        if (user_exists) {
+            const token = jwt.sign({ email: email }, JWT_SECRET)
+
+            await users.updateOne({email: email},{$set:{token:token}})
+
+            const sendSmtpEmail = {
+                sender: { name: "Golden-Key", email: process.env.CORREO },
+                to: [{ email }],
+                subject: "Recuperar Contraseña",
+                textContent: `Para recuperar la contraseña entra en este enlace -> ${process.env.FRONTEND_URL}/changePassword/${token}`,
+                htmlContent: `<p>Para recuperar la contraseña, entra a -> <a href="${process.env.FRONTEND_URL}/changePassword/${token}">Recuperar Contraseña</a></p>`
+            };
+
+            await apiInstance.sendTransacEmail(sendSmtpEmail)
+
+            return res.json({message:'Correo enviado con éxito'})
+
+        } else {
+            return res.json({ message: "No hay ninguna cuenta asociada a este correo" })
+        }
+
+    } catch (error) {
+        console.error(error)
+        return res.status(500).json({ message: "Error al enviar el email" })
+    }
+})
+
 
 
 
