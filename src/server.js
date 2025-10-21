@@ -692,6 +692,41 @@ app.get('/users',authMiddleware,adminMiddleware,async(req,res)=>{
     }
 })
 
+app.get('/admin/houses/:category/:rented',async(req,res)=>{
+    try {
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const category = req.params.category
+
+        const rented = req.params.rented === 'true'//Para que si es true, sea true, y sino false
+
+        console.log('category:', category, 'rented:', rented, typeof rented);
+
+        const houses = await housesCollection.find({category:`${category}`, rented:rented}).toArray()
+
+        console.log(houses);
+        
+
+        if (houses.length>0) {
+            console.log('Casas obtenidas con exito');
+
+            return res.json({houses:houses})
+            
+        }else{
+            console.log('No se han obtenido las casas');
+
+            return res.json({error:'No se han obtenido las casas'})
+            
+        }
+
+    } catch (error) {
+        console.log('Error al obtener las casas');
+
+        return res.json({error:'Error al obtener las casas'})
+        
+    }
+})
 
 
 
