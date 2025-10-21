@@ -567,6 +567,73 @@ app.post('/forgotPassword',validadorRecuperarPassword,CSRFProtection, async(req,
 
 
 
+//Validador de cambio de contraseña
+const validadorChangePassword = [
+        
+        body('new_password')
+        .trim()
+        .notEmpty().withMessage('Password no puede estar vacío')
+        .matches(/\d/).withMessage('Mínimo un dígito')
+        .isLength({min:8,max:30}).withMessage('Password debe contener entre 8 y 30 carácteres')
+        .matches(/[A-Z]/).withMessage('Mínimo una mayúscula en Password')
+        .matches(/[#$€&%]/).withMessage('Mínimo un carácter especial en Password')
+        .customSanitizer(val=>(val || '').replace(/\s+/g,''))
+        .escape()
+        
+]
+
+//Ruta para cambiar contraseña
+app.post('/changePassword/:token',validadorChangePassword,async(req,res)=>{
+    try{
+        const errors = validationResult(req)
+
+        const db = await conectarDB()
+        const users = db.collection('users')
+
+        const token = req.params.token
+
+        const decoded = jwt.verify(token,JWT_SECRET)
+        const email = decoded.email
+
+        const userData = await users.findOne({email:email, token:token})
+        
+        if (userData) {
+            const {new_password,confirm_password} = req.body
+            
+            if (new_password===confirm_password) {
+                
+                const password_equals = await bcrypt.compare(new_password,userData.password)
+                    
+                if (password_equals) {
+                    res.json({"message":"La nueva contraseña no puede ser igual a la anterior"})
+                }else{
+                    if (!errors.isEmpty()) {
+                        return res.status(400).json({ message: errors.array()[0].msg })
+                    }
+                        
+                    const new_encripted_password = await bcrypt.hash(new_password,10)
+
+                    await users.updateOne({email:email},{$set:{password:new_encripted_password}})
+
+                    await users.updateOne({email:email},{$set:{token:''}})
+                        
+                    res.json({"message":"Contraseña cambiada con éxito"})
+                }
+            }else{
+                res.json({"message":"Contraseñas no coinciden"})
+            }
+        }else{
+            res.json({"message":"Token inválido o expirado"})
+        }
+    }catch(error){
+        console.log(error);
+        
+        res.json({"message":"Token inválido o erroneo"})
+    }
+})
+
+
+
 
 
 
