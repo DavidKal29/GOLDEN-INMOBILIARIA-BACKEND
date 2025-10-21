@@ -72,6 +72,22 @@ const authMiddleware = async(req,res,next)=>{
 
 }
 
+const adminMiddleware = (req,res,next)=>{
+    try {
+        if (req.user.rol === 'admin') {
+            next()
+        }else{
+            return res.status(401).json({error:'Solo los administradores pueden visitar este espacio'})
+        }
+    } catch (error) {
+        console.log('Error en el adminmiddleware');
+        
+        console.log(error);
+        
+        return res.status(401).json({error:'Error de autenticación'})
+    }
+}
+
 
 
 
@@ -529,7 +545,7 @@ app.post('/forgotPassword',validadorRecuperarPassword,CSRFProtection, async(req,
         const errors = validationResult(req)
         
         if (!errors.isEmpty()) {
-            return res.status(400).json({ message: errors.array()[0].msg })
+            return res.status(400).json({ error: errors.array()[0].msg })
         }
 
         const db = await conectarDB()
@@ -553,15 +569,15 @@ app.post('/forgotPassword',validadorRecuperarPassword,CSRFProtection, async(req,
 
             await apiInstance.sendTransacEmail(sendSmtpEmail)
 
-            return res.json({message:'Correo enviado con éxito'})
+            return res.json({success:'Correo enviado con éxito'})
 
         } else {
-            return res.json({ message: "No hay ninguna cuenta asociada a este correo" })
+            return res.json({ error: "No hay ninguna cuenta asociada a este correo" })
         }
 
     } catch (error) {
         console.error(error)
-        return res.status(500).json({ message: "Error al enviar el email" })
+        return res.status(500).json({ error: "Error al enviar el email" })
     }
 })
 
@@ -602,13 +618,14 @@ app.post('/changePassword/:token',validadorChangePassword,async(req,res)=>{
             
             if (new_password===confirm_password) {
                 
+                
                 const password_equals = await bcrypt.compare(new_password,userData.password)
                     
                 if (password_equals) {
-                    res.json({"message":"La nueva contraseña no puede ser igual a la anterior"})
+                    res.json({error:"La nueva contraseña no puede ser igual a la anterior"})
                 }else{
                     if (!errors.isEmpty()) {
-                        return res.status(400).json({ message: errors.array()[0].msg })
+                        return res.status(400).json({ error: errors.array()[0].msg })
                     }
                         
                     const new_encripted_password = await bcrypt.hash(new_password,10)
@@ -617,18 +634,61 @@ app.post('/changePassword/:token',validadorChangePassword,async(req,res)=>{
 
                     await users.updateOne({email:email},{$set:{token:''}})
                         
-                    res.json({"message":"Contraseña cambiada con éxito"})
+                    res.json({success:"Contraseña cambiada con éxito"})
                 }
             }else{
-                res.json({"message":"Contraseñas no coinciden"})
+                
+                res.json({error:"Contraseñas no coinciden"})
             }
         }else{
-            res.json({"message":"Token inválido o expirado"})
+            res.json({error:"Token inválido o expirado"})
         }
     }catch(error){
         console.log(error);
         
-        res.json({"message":"Token inválido o erroneo"})
+        res.json({error:"Token inválido o erroneo"})
+    }
+})
+
+
+app.get('/users',authMiddleware,adminMiddleware,async(req,res)=>{
+    try {
+        const db = await conectarDB()
+        const users = await db.collection('users')
+
+        const usersData = await users.find({_id:{$ne: new ObjectId(req.user._id)}}).toArray()
+
+        //Se ordena por más reciente
+        usersData.sort((a, b) => {
+            const [da, ma, ya] = a.fecha_Registro.split('/').map(Number);
+            const [db, mb, yb] = b.fecha_Registro.split('/').map(Number);
+
+            const fechaA = new Date(ya, ma - 1, da);
+            const fechaB = new Date(yb, mb - 1, db);
+
+            return fechaB - fechaA; 
+        });
+
+        console.log(usersData);
+        
+
+        if (usersData.length>0) {
+            console.log('Usuarios obtenidos con éxito');
+            
+            return res.json({users:usersData})
+        }else{
+            console.log('No se han obtenido los usuarios, la lista está vacía');
+            
+            return res.json({error:'No hay usuarios registrados en la web'})
+        }
+    
+    } catch (error) {
+        console.log('Error desde admin users');
+
+        console.log(error);
+
+        return res.json({error:'Error al intentar obtener los usuarios de la web'})
+        
     }
 })
 
