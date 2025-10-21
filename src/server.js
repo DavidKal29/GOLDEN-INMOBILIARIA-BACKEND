@@ -189,15 +189,18 @@ app.post('/editProfile',CSRFProtection,authMiddleware,async(req,res)=>{
             return res.json({error:'Mínimo un campo debe ser distinto'})
         }
         
-        const user_exists = await users.findOne(
+        const user_exists = await users.find(
             {
-                $or:[{email:email},{username:username},{phone:phone}],
-                _id:{$ne:req.user._id}
+                _id:{$ne:new ObjectId(req.user._id)},
+                $or:[{email:email},{username:username}]
+                
             }
-        )
+        ).toArray()
 
-        if (user_exists) {
+        if (user_exists.length>0) {
             console.log('Email o username ya están en uso');
+            console.log(user_exists);
+            
             return res.json({error:'Email o username ya están en uso'})
         }else{
             console.log('Datos nuevos inexistentes');
