@@ -54,8 +54,6 @@ const authMiddleware = async(req,res,next)=>{
 
             delete userData.password
 
-            console.log('EL usuario desde el middleware:',userData);
-
             req.user = userData
 
             next()
@@ -218,7 +216,6 @@ app.post('/login',CSRFProtection,async(req,res)=>{
 
 
 app.get('/profile',authMiddleware,(req,res)=>{
-    console.log('El usuario desde el perfil:',req.user);
     
     return res.json({user:req.user})
 })
@@ -322,8 +319,6 @@ app.get('/houses/:category',async(req,res)=>{
         const category = req.params.category
 
         const houses = await housesCollection.find({category:`${category}`, rented:false}).toArray()
-
-        console.log(houses);
         
 
         if (houses.length>0) {
@@ -346,12 +341,15 @@ app.get('/houses/:category',async(req,res)=>{
     }
 })
 
-app.get('/house/:id',async(req,res)=>{
+app.get('/house/:id',authMiddleware,async(req,res)=>{
     try {
         db = await conectarDB()
         housesCollection = await db.collection("houses")
 
         const id = req.params.id
+
+        console.log('El id de la casa:',id);
+        
 
         const house = await housesCollection.findOne({_id:new ObjectId(id), rented:false})
 
@@ -724,6 +722,9 @@ app.get('/admin/users/:id',authMiddleware,adminMiddleware,async(req,res)=>{
 
         const id = req.params.id
 
+        console.log(id);
+        
+
         const user = await users.findOne({_id: new ObjectId(id)})
 
         if (user) {
@@ -788,6 +789,43 @@ app.get('/admin/delete_user/:id',authMiddleware,adminMiddleware,async(req,res)=>
         console.log(error);
         
         return res.json({error:'Error al borrar al usuario'})
+        
+    }
+})
+
+app.get('/admin/house/:id',authMiddleware,adminMiddleware,async(req,res)=>{
+    try {
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        console.log('El id de la casa:',id);
+        
+
+        const house = await housesCollection.findOne({_id:new ObjectId(id)})
+
+        console.log(house);
+        
+
+        if (house) {
+            console.log('Casa obtenida con exito');
+
+            return res.json({house:house})
+            
+        }else{
+            console.log('No se ha obtenido la casa');
+
+            return res.json({error:'No se ha obtenido las casa'})
+            
+        }
+
+    } catch (error) {
+        console.log('Error al obtener la casa');
+        console.log(error);
+        
+
+        return res.json({error:'Error al obtener la casa'})
         
     }
 })
