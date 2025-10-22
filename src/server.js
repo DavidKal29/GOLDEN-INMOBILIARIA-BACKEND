@@ -324,7 +324,7 @@ app.get('/houses/:category',async(req,res)=>{
         if (houses.length>0) {
             console.log('Casas obtenidas con exito');
 
-            return res.json({houses:houses})
+            return res.json({houses:houses.reverse()})
             
         }else{
             console.log('No se han obtenido las casas');
@@ -499,7 +499,7 @@ app.get('/getMyHouses',authMiddleware,async(req,res)=>{
         const myHouses = await houses.find({id_user:new ObjectId(req.user._id), rented:true}).toArray()
 
         if (myHouses.length>0) {
-            return res.json({houses:myHouses})
+            return res.json({houses:myHouses.reverse()})
         }else{
             return res.json({houses:[]})
         }
@@ -507,7 +507,7 @@ app.get('/getMyHouses',authMiddleware,async(req,res)=>{
     } catch (error) {
         console.log(error);
         
-        console.log('Erorr en get mys houses');
+        console.log('Error en get my houses');
         
         return res.json({error:'Error al obtener los datos de las casas del usuario'}) 
     }
@@ -644,24 +644,13 @@ app.get('/users',authMiddleware,adminMiddleware,async(req,res)=>{
 
         const usersData = await users.find({_id:{$ne: new ObjectId(req.user._id)}}).toArray()
 
-        //Se ordena por más reciente
-        usersData.sort((a, b) => {
-            const [da, ma, ya] = a.fecha_Registro.split('/').map(Number);
-            const [db, mb, yb] = b.fecha_Registro.split('/').map(Number);
-
-            const fechaA = new Date(ya, ma - 1, da);
-            const fechaB = new Date(yb, mb - 1, db);
-
-            return fechaB - fechaA; 
-        });
-
         console.log(usersData);
         
 
         if (usersData.length>0) {
             console.log('Usuarios obtenidos con éxito');
             
-            return res.json({users:usersData})
+            return res.json({users:usersData.reverse()})
         }else{
             console.log('No se han obtenido los usuarios, la lista está vacía');
             
@@ -697,7 +686,7 @@ app.get('/admin/houses/:category/:rented',authMiddleware,adminMiddleware,async(r
         if (houses.length>0) {
             console.log('Casas obtenidas con exito');
 
-            return res.json({houses:houses})
+            return res.json({houses:houses.reverse()})
             
         }else{
             console.log('No se han obtenido las casas');
@@ -734,7 +723,7 @@ app.get('/admin/users/:id',authMiddleware,adminMiddleware,async(req,res)=>{
 
             console.log('Casas obtenidas del usuario');
 
-            return res.json({userData:{user: user, houses: houses}})
+            return res.json({userData:{user: user, houses: houses.reverse()}})
             
         }else{
             console.log('El usuario no existe');
