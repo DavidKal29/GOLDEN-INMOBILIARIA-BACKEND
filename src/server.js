@@ -830,6 +830,78 @@ app.get('/admin/house/:id',authMiddleware,adminMiddleware,async(req,res)=>{
     }
 })
 
+const HouseValidator = [
+    body('address')
+        .trim()
+        .notEmpty()
+        .withMessage('La dirección no puede estar vacía'),
+    body('bedrooms')
+        .isInt({ min: 0 })
+        .withMessage('El número de habitaciones debe ser un número entero mayor o igual a 0'),
+    body('bathrooms')
+        .isInt({ min: 0 })
+        .withMessage('El número de baños debe ser un número entero mayor o igual a 0'),
+    body('area_m2')
+        .isFloat({ min: 0 })
+        .withMessage('El área debe ser un número mayor o igual a 0'),
+    body('price')
+        .isFloat({ min: 0 })
+        .withMessage('El precio debe ser un número mayor o igual a 0'),
+    body('image')
+        .trim()
+        .notEmpty()
+        .withMessage('El enlace de la imagen no puede estar vacío'),
+    body('category')
+        .isIn(['house', 'castle', 'industrial'])
+        .withMessage('La categoría debe ser house, castle o industrial')
+]
+
+app.post('/admin/house/:id',authMiddleware,adminMiddleware,HouseValidator,async(req,res)=>{
+    try {
+        
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({error:errors.array()[0].msg})
+        }
+
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        const {address,bedrooms,bathrooms,area_m2,price,image,category} = req.body
+
+        console.log('El id de la casa:',id);
+        
+        await housesCollection.updateOne(
+            {_id: new ObjectId(id)},
+            {
+                $set:{
+                    address:address,
+                    bedrooms:bedrooms,
+                    bathrooms:bathrooms,
+                    area_m2:area_m2,
+                    price:price,
+                    image:image,
+                    category:category
+                }
+            },
+            {upsert:true} //Para reutilizar el método en crear inmueble
+        ) 
+        
+
+        return res.json({success:'Datos insertados con éxito'})
+
+    } catch (error) {
+        console.log('Error al editar la casa');
+        console.log(error);   
+
+        return res.json({error:'Error al insertar los datos del inmueble'})
+        
+    }
+})
+
 
 
 
