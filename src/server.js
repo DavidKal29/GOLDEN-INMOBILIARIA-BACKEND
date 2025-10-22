@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken')
 const cookieOptions = require('./cookieOptions.js')
 const JWT_SECRET = process.env.JWT_SECRET
 const {ObjectId} = require('mongodb')
-const csruf = require('csurf')
 const {body,validationResult} = require('express-validator')
 const {brevo, apiInstance} = require('./brevo.js')
 
@@ -26,67 +25,17 @@ app.use(cors({
     credentials:true
 }))
 
-const CSRFProtection = csruf({cookie:{cookieOptions}})
+const CSRFProtection = require('./middlewares/CSRF.js')
+console.log(CSRFProtection);
+
 
 app.get('/csrf-token',CSRFProtection,(req,res)=>{
     return res.json({csrfToken: req.csrfToken()})
 })
 
-const authMiddleware = async(req,res,next)=>{
-    try {
-        const token = req.cookies.token
+const authMiddleware = require('./middlewares/authMiddleware.js')
 
-        if (!token) {
-            console.log('No se ha enviado el token');
-            
-            return res.status(401).json({error:'Error de autenticación'})
-        }else{
-            console.log('EL token ha llegado correactamente');
-            
-            const payload = jwt.verify(token,JWT_SECRET)
-
-            const id = payload.id
-
-            const db = await conectarDB()
-            const users = db.collection('users')
-
-            const userData = await users.findOne({_id:new ObjectId(id)})
-
-            delete userData.password
-
-            req.user = userData
-
-            next()
-            
-        }
-
-    } catch (error) {
-        console.log('Error en el authmiddleware');
-        
-        console.log(error);
-        
-        return res.status(401).json({error:'Error de autenticación'})
-    }
-
-}
-
-const adminMiddleware = (req,res,next)=>{
-    try {
-        if (req.user.rol === 'admin') {
-            next()
-        }else{
-            return res.status(401).json({error:'Solo los administradores pueden visitar este espacio'})
-        }
-    } catch (error) {
-        console.log('Error en el adminmiddleware');
-        
-        console.log(error);
-        
-        return res.status(401).json({error:'Error de autenticación'})
-    }
-}
-
-
+const adminMiddleware = require('./middlewares/adminMiddleware.js')
 
 
 //Validador de los inputs del register
