@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const dotenv = require('dotenv').config()
 const JWT_SECRET = process.env.JWT_SECRET
 const conectarDB = require('../mongo.js')
 const {ObjectId} = require('mongodb')
