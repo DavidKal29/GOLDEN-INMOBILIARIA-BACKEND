@@ -752,6 +752,46 @@ app.get('/admin/users/:id',authMiddleware,adminMiddleware,async(req,res)=>{
     }
 })
 
+app.get('/admin/delete_user/:id',authMiddleware,adminMiddleware,async(req,res)=>{
+    try {
+        db = await conectarDB()
+        users = await db.collection("users")
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        const user = await users.findOne({_id: new ObjectId(id)})
+
+        if (user) {
+            console.log('Usuario obtenido');
+            
+            await users.deleteOne({_id: new ObjectId(id)})
+
+            console.log('Usuario borrado con éxito');
+
+            await housesCollection.updateMany({id_user: new ObjectId(id)},{$set:{id_user:'', rented:false}})
+
+            console.log('Inmuebles del usuario borrados con exito');
+            
+            return res.json({success:'Usuario borrado con éxito'})
+            
+        }else{
+            console.log('El usuario no existe');
+
+            return res.json({error:'El usuario que intentas borrar no existe'})
+            
+        }      
+
+    } catch (error) {
+        console.log('Error al borrar al usuario');
+        
+        console.log(error);
+        
+        return res.json({error:'Error al borrar al usuario'})
+        
+    }
+})
+
 
 
 
