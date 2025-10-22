@@ -902,6 +902,45 @@ app.post('/admin/house/:id',authMiddleware,adminMiddleware,HouseValidator,async(
     }
 })
 
+app.post('/admin/add_house',authMiddleware,adminMiddleware,HouseValidator,async(req,res)=>{
+    try {
+        
+        const errors = validationResult(req)
+
+        if (!errors.isEmpty()) {
+            return res.status(400).json({error:errors.array()[0].msg})
+        }
+
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const {address,bedrooms,bathrooms,area_m2,price,image,category} = req.body
+
+        await housesCollection.insertOne(
+            {
+                address:address,
+                bedrooms:bedrooms,
+                bathrooms:bathrooms,
+                area_m2:area_m2,
+                price:price,
+                image:image,
+                category:category,
+                rented:false
+            }    
+        ) 
+
+        return res.json({success:'Datos insertados con éxito'})
+
+    } catch (error) {
+        console.log('Error al crear la casa');
+        
+        console.log(error);   
+
+        return res.json({error:'Error al insertar los datos del inmueble'})
+        
+    }
+})
+
 
 
 
