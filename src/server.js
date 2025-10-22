@@ -805,7 +805,7 @@ app.get('/admin/house/:id',authMiddleware,adminMiddleware,async(req,res)=>{
         }else{
             console.log('No se ha obtenido la casa');
 
-            return res.json({error:'No se ha obtenido las casa'})
+            return res.json({error:'No se ha obtenido la casa'})
             
         }
 
@@ -929,6 +929,47 @@ app.post('/admin/add_house',authMiddleware,adminMiddleware,HouseValidator,async(
         
     }
 })
+
+
+app.get('/admin/reset_house/:id',authMiddleware,adminMiddleware,async(req,res)=>{
+    try {
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        console.log('El id de la casa:',id);
+        
+        const house = await housesCollection.findOne({_id:new ObjectId(id)})
+
+        console.log(house);
+        
+
+        if (house) {
+            console.log('Casa obtenida con exito');
+
+            await housesCollection.updateOne({_id:new ObjectId(id)},{$set:{id_user:'',rented:false}})
+
+            return res.json({success:'Inmueble vuelve a estar disponible para la compra'})
+            
+        }else{
+            console.log('No se ha obtenido la casa');
+
+            return res.json({error:'No se ha obtenido la casa'})
+            
+        }
+
+    } catch (error) {
+        console.log('Error al resetear la casa');
+        console.log(error);
+        
+
+        return res.json({error:'Error al resetear la casa'})
+        
+    }
+})
+
+
 
 
 
