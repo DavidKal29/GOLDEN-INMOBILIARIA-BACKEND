@@ -680,7 +680,7 @@ app.get('/users',authMiddleware,adminMiddleware,async(req,res)=>{
     }
 })
 
-app.get('/admin/houses/:category/:rented',async(req,res)=>{
+app.get('/admin/houses/:category/:rented',authMiddleware,adminMiddleware,async(req,res)=>{
     try {
         db = await conectarDB()
         housesCollection = await db.collection("houses")
@@ -704,7 +704,7 @@ app.get('/admin/houses/:category/:rented',async(req,res)=>{
         }else{
             console.log('No se han obtenido las casas');
 
-            return res.json({error:'No se han obtenido las casas'})
+            return res.json({error:'No hay inmuebles con esas características'})
             
         }
 
@@ -712,6 +712,42 @@ app.get('/admin/houses/:category/:rented',async(req,res)=>{
         console.log('Error al obtener las casas');
 
         return res.json({error:'Error al obtener las casas'})
+        
+    }
+})
+
+app.get('/admin/users/:id',authMiddleware,adminMiddleware,async(req,res)=>{
+    try {
+        db = await conectarDB()
+        users = await db.collection("users")
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        const user = await users.findOne({_id: new ObjectId(id)})
+
+        if (user) {
+            console.log('Usuario obtenido');
+            
+            const houses = await housesCollection.find({id_user: new ObjectId(id)}).toArray()
+
+            console.log('Casas obtenidas del usuario');
+
+            return res.json({userData:{user: user, houses: houses}})
+            
+        }else{
+            console.log('El usuario no existe');
+
+            return res.json({error:'El usuario que intentas ver no existe'})
+            
+        }      
+
+    } catch (error) {
+        console.log('Error al obtener los datos del usuario');
+        console.log(error);
+        
+
+        return res.json({error:'Usuario inválido o inexistente'})
         
     }
 })
