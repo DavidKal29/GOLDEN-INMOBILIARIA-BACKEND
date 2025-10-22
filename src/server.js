@@ -969,6 +969,41 @@ app.get('/admin/reset_house/:id',authMiddleware,adminMiddleware,async(req,res)=>
     }
 })
 
+app.get('/admin/delete_house/:id',authMiddleware,adminMiddleware,async(req,res)=>{
+    try {
+        db = await conectarDB()
+        housesCollection = await db.collection("houses")
+
+        const id = req.params.id
+
+        const house = await housesCollection.findOne({_id: new ObjectId(id)})
+
+        if (house) {
+            console.log('Inmueble obtenido');
+            
+            await housesCollection.deleteOne({_id: new ObjectId(id)})
+
+            console.log('Inmueble borrado con éxito');
+            
+            return res.json({success:'Inmueble borrado con éxito'})
+            
+        }else{
+            console.log('El inmueble no existe');
+
+            return res.json({error:'El inmueble que intentas borrar no existe'})
+            
+        }      
+
+    } catch (error) {
+        console.log('Error al borrar el inmueble');
+        
+        console.log(error);
+        
+        return res.json({error:'Error al borrar el inmueble'})
+        
+    }
+})
+
 
 
 
