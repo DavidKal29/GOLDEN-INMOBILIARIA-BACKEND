@@ -39,6 +39,11 @@ const adminRoutes = require('./routes/admin.js')
 app.use('/',adminRoutes)
 
 //Ruta para obtener el CSRF Token
+app.get('/',(req,res)=>{
+    return res.json({message:'Golden Key Inmobiliaria Backend, funcionando correctamente'})
+})
+
+//Ruta para obtener el CSRF Token
 app.get('/csrf-token',CSRFProtection,(req,res)=>{
     return res.json({csrfToken: req.csrfToken()})
 })
