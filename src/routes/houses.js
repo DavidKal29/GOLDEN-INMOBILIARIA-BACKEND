@@ -6,6 +6,7 @@ const conectarDB = require('../mongo.js')
 const {body,validationResult} = require('express-validator')
 const authMiddleware = require('../middlewares/authMiddleware.js')
 const {ObjectId} = require('mongodb')
+const {brevo, apiInstance} = require('../brevo.js')
 
 router.get('/houses/:category',async(req,res)=>{
     try {
@@ -170,6 +171,90 @@ router.post('/buyHouse/:id',CSRFProtection,authMiddleware,paymentValidator,async
             await houses.updateOne({_id: new ObjectId(id)},{$set:{rented:true, id_user: new ObjectId(req.user._id)}})
 
             console.log('La casa ha sido añadida a la lista de compras del usuario');
+
+            const email = req.user.email
+
+            const houseData = await houses.findOne({_id:new ObjectId(id)})
+
+            console.log('El housedata:',houseData);
+            
+
+            const emailHtml = `
+              <!DOCTYPE html>
+              <html lang="es">
+                <head>
+                  <meta charset="UTF-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                  <title>Compra realizada con éxito</title>
+                </head>
+                <body style="background-color:#f9fafb; font-family:'Segoe UI', Roboto, sans-serif; margin:0; padding:2rem;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:0 auto; background:white; border-radius:1rem; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+                    <tr>
+                      <td style="background-color:orange; padding:1rem 2rem; color:white; text-align:center;">
+                        <h1 style="margin:0; font-size:1.5rem;">✅ ¡Compra realizada con éxito!</h1>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="padding:2rem; text-align:center;">
+                        <p style="color:#374151; font-size:1rem; margin-bottom:1.5rem;">
+                          Gracias por tu compra. A continuación te mostramos los datos de la propiedad adquirida:
+                        </p>
+
+                        <img src="${houseData.image}" alt="Imagen de la propiedad" style="width:100%; border-radius:0.75rem; margin-bottom:1.5rem;" />
+
+                        <table cellpadding="6" cellspacing="0" style="width:100%; border-collapse:collapse; text-align:left;">
+                          <tr>
+                            <td style="color:#6b7280; font-weight:600; width:40%;">Dirección:</td>
+                            <td style="color:#111827;">${houseData.address}</td>
+                          </tr>
+                          <tr>
+                            <td style="color:#6b7280; font-weight:600;">Área:</td>
+                            <td style="color:#111827;">${houseData.area_m2} m²</td>
+                          </tr>
+                          <tr>
+                            <td style="color:#6b7280; font-weight:600;">Baños:</td>
+                            <td style="color:#111827;">${houseData.bathrooms}</td>
+                          </tr>
+                          <tr>
+                            <td style="color:#6b7280; font-weight:600;">Dormitorios:</td>
+                            <td style="color:#111827;">${houseData.bedrooms}</td>
+                          </tr>
+                          <tr>
+                            <td style="color:#6b7280; font-weight:600;">Categoría:</td>
+                            <td style="color:#111827;">${houseData.category}</td>
+                          </tr>
+                          <tr>
+                            <td style="color:#6b7280; font-weight:600;">Precio:</td>
+                            <td style="color:#111827; font-weight:700; color:#16a34a;">${houseData.price} €</td>
+                          </tr>
+                        </table>
+
+                        <p style="margin-top:2rem; color:#6b7280; font-size:0.875rem;">
+                          Recibirás en breve un correo y un SMS con la cita para firmar los papeles y obtener el inmueble
+                        </p>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td style="background-color:#f3f4f6; padding:1rem; text-align:center; color:#9ca3af; font-size:0.875rem;">
+                        © ${new Date().getFullYear()} Golden Key Inmobiliaria. Todos los derechos reservados.
+                      </td>
+                    </tr>
+                  </table>
+                </body>
+              </html>
+            `
+
+            const sendSmtpEmail = {
+                sender: { name: "Golden-Key", email: process.env.CORREO },
+                to: [{ email }],
+                subject: "Compra Exitosa",
+                textContent: `Compra realizada con éxito`,
+                htmlContent: emailHtml
+            };
+
+            await apiInstance.sendTransacEmail(sendSmtpEmail)
 
             console.log('La casa ya no está a la venta');
 
