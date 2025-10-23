@@ -1,8 +1,8 @@
 const cookieOptions = {
     httpOnly: true,
-    secure:false,
+    secure:true,
     maxAge: 3600 * 1000,
-    sameSite:'lax'
+    sameSite:'none'
 }
 
 module.exports = cookieOptions

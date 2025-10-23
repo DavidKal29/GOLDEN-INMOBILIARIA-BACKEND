@@ -217,7 +217,7 @@ const HouseValidator = [
         .withMessage('La categoría debe ser house, castle o industrial')
 ]
 
-router.post('/admin/house/:id',authMiddleware,adminMiddleware,HouseValidator,async(req,res)=>{
+router.post('/admin/house/:id',authMiddleware,adminMiddleware,HouseValidator,CSRFProtection,async(req,res)=>{
     try {
         
         const errors = validationResult(req)
@@ -263,7 +263,7 @@ router.post('/admin/house/:id',authMiddleware,adminMiddleware,HouseValidator,asy
     }
 })
 
-router.post('/admin/add_house',authMiddleware,adminMiddleware,HouseValidator,async(req,res)=>{
+router.post('/admin/add_house',authMiddleware,adminMiddleware,HouseValidator,CSRFProtection,async(req,res)=>{
     try {
         
         const errors = validationResult(req)

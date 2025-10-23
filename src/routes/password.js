@@ -7,6 +7,8 @@ const {body,validationResult} = require('express-validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const JWT_SECRET = process.env.JWT_SECRET
+const {ObjectId} = require('mongodb')
+const {brevo, apiInstance} = require('../brevo.js')
 
 
 //Validador del email de recuperación de contraseña
