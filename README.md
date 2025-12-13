@@ -7,15 +7,14 @@ Esta es una **API/backend** para una web inmobiliaria en línea llamada **Golden
 ### Funcionalidades para la API:
 
 - **Autenticación completa**: registro, login y recuperación de contraseña mediante JWT.
-- **Gestión de usuarios**: crear y editar cuentas de usuario.
-- **Gestión de Inmuebles**: Gran catálogo de inmuebles, con la posibilidad de filtrar y comprar, apareciendo en el perfil los comprados.
-- **Protección de rutas** mediante **JWT**, asegurando que solo usuarios autorizados puedan acceder a ciertas operaciones.
+- **Usuarios**: crear y editar cuentas de usuario.
+- **Gestión de Inmuebles**: gran catálogo de inmuebles, con la posibilidad de filtrar y comprar, apareciendo en el perfil los comprados.
+- **Protección de rutas** mediante **JWT**, **Cookies**, mediante un **Middleware**, asegurando que solo usuarios autorizados y dependiendo de su rol,  puedan acceder a ciertas operaciones.
 - **CORS habilitado**, preparado para trabajar con frontend externo.
 - **Envío de emails automáticos** para confirmaciones, notificaciones o recuperación de contraseña. Utilizando el servicio de Brevo(paquete indicado abajo).
 - **Validación de datos** con `express-validator` para garantizar integridad y seguridad.
 - **Middleware de seguridad** con `csurf` y `cookie-parser`.
-- **Administración** con roles de usuario, donde el administrador puede ver todos los usuarios, inmuebles y editarlos.
-
+- **Administración**, rutas accesibles solo a través del rol admin del user. Gestiona a los usuarios, sus compras y los inmuebles.
 ---
 
 ### Requisitos
